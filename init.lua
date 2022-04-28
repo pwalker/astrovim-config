@@ -154,6 +154,8 @@ local config = {
     local set = vim.opt
     -- Set options
     set.relativenumber = true
+    set.foldmethod = 'syntax'
+    set.foldlevel = 10
 
     -- Set key bindings
     map("n", "<C-s>", ":w!<CR>", opts)
