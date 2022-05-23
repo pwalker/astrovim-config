@@ -6,6 +6,17 @@ local config = {
   -- Set colorscheme
   colorscheme = "nightfly",
 
+  options = {
+    opt = {
+      relativenumber = true, -- sets vim.opt.relativenumber
+      foldmethod = 'syntax',
+      foldlevel = 10,
+    },
+    g = {
+      mapleader = " ", -- sets vim.g.mapleader
+    },
+  },
+
   -- Default theme configuration
   -- default_theme = {
   --   diagnostics_style = "none",
@@ -22,22 +33,10 @@ local config = {
   --   end,
   -- },
 
-  -- Disable default plugins
-  enabled = {
-    bufferline = true,
-    neo_tree = true,
-    lualine = true,
-    gitsigns = true,
-    colorizer = true,
-    toggle_term = true,
-    comment = true,
-    symbols_outline = true,
-    indent_blankline = true,
-    dashboard = true,
-    which_key = true,
-    neoscroll = true,
-    ts_rainbow = true,
-    ts_autotag = true,
+  -- Disable AstroNvim ui features
+  ui = {
+    nui_input = true,
+    telescope_select = true,
   },
 
   -- Configure plugins
@@ -56,18 +55,54 @@ local config = {
       { "tpope/vim-fugitive" },
     },
     -- All other entries override the setup() call for default plugins
+    ["null-ls"] = function(config)
+      local null_ls = require "null-ls"
+      -- Check supported formatters and linters
+      -- https://github.com/jose-elias-alvarez/null-ls.nvim/tree/main/lua/null-ls/builtins/formatting
+      -- https://github.com/jose-elias-alvarez/null-ls.nvim/tree/main/lua/null-ls/builtins/diagnostics
+      config.sources = {
+        -- Set a formatter
+        null_ls.builtins.formatting.rufo,
+        null_ls.builtins.formatting.prettier, 
+        -- Set a linter
+        null_ls.builtins.diagnostics.rubocop,
+      }
+      -- set up null-ls's on_attach function
+      config.on_attach = function(client)
+        -- NOTE: You can remove this on attach function to disable format on save
+        if client.resolved_capabilities.document_formatting then
+          vim.api.nvim_create_autocmd("BufWritePre", {
+            desc = "Auto format before save",
+            pattern = "<buffer>",
+            callback = vim.lsp.buf.formatting_sync,
+          })
+        end
+      end
+      return config -- return final config table
+    end,
+
     treesitter = {
       ensure_installed = { "lua" },
+    },
+    ["nvim-lsp-installer"] = {
+      ensure_installed = { "sumneko_lua" },
     },
     packer = {
       compile_path = vim.fn.stdpath "config" .. "/lua/packer_compiled.lua",
     },
   },
 
-  -- Add paths for including more VS Code style snippets in luasnip
+  -- LuaSnip Options
   luasnip = {
+    -- Add paths for including more VS Code style snippets in luasnip
     vscode_snippet_paths = {},
+    -- Extend filetypes
+    filetype_extend = {
+      javascript = { "javascriptreact" },
+    },
   },
+
+
 
   -- Modify which-key registration
   ["which-key"] = {
@@ -111,62 +146,20 @@ local config = {
     underline = true,
   },
 
-  -- null-ls configuration
-  ["null-ls"] = function()
-    -- Formatting and linting
-    -- https://github.com/jose-elias-alvarez/null-ls.nvim
-    local status_ok, null_ls = pcall(require, "null-ls")
-    if not status_ok then
-      return
-    end
-
-    -- Check supported formatters
-    -- https://github.com/jose-elias-alvarez/null-ls.nvim/tree/main/lua/null-ls/builtins/formatting
-    local formatting = null_ls.builtins.formatting
-
-    -- Check supported linters
-    -- https://github.com/jose-elias-alvarez/null-ls.nvim/tree/main/lua/null-ls/builtins/diagnostics
-    local diagnostics = null_ls.builtins.diagnostics
-
-    null_ls.setup {
-      debug = false,
-      sources = {
-        -- Set a formatter
-        formatting.rufo,
-        formatting.prettier,
-        -- Set a linter
-        diagnostics.rubocop,
-      },
-      -- NOTE: You can remove this on attach function to disable format on save
-      on_attach = function(client)
-        if client.resolved_capabilities.document_formatting then
-          vim.cmd "autocmd BufWritePre <buffer> lua vim.lsp.buf.formatting_sync()"
-        end
-      end,
-    }
-  end,
-
   -- This function is run last
   -- good place to configure mappings and vim options
   polish = function()
-    local opts = { noremap = true, silent = true }
-    local map = vim.api.nvim_set_keymap
-    local set = vim.opt
-    -- Set options
-    set.relativenumber = true
-    set.foldmethod = 'syntax'
-    set.foldlevel = 10
-
     -- Set key bindings
-    map("n", "<C-s>", ":w!<CR>", opts)
+    vim.keymap.set("n", "<C-s>", ":w!<CR>")
 
     -- Set autocommands
-    vim.cmd [[
-      augroup packer_conf
-        autocmd!
-        autocmd bufwritepost plugins.lua source <afile> | PackerSync
-      augroup end
-    ]]
+    vim.api.nvim_create_augroup("packer_conf", { clear = true })
+    vim.api.nvim_create_autocmd("BufWritePost", {
+      desc = "Sync packer after modifying plugins.lua",
+      group = "packer_conf",
+      pattern = "plugins.lua",
+      command = "source <afile> | PackerSync",
+    }) 
   end,
 }
 
