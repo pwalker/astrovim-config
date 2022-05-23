@@ -43,7 +43,7 @@ local config = {
   plugins = {
     -- Add plugins, the packer syntax without the "use"
     init = {
-      { "bluz71/vim-nightfly-guicolors" },
+      { "pwalker/vim-nightfly-guicolors" },
       -- { "andweeb/presence.nvim" },
       {
         "ray-x/lsp_signature.nvim",
