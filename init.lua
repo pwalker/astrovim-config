@@ -3,13 +3,30 @@ vim.o.termguicolors = true
 
 local config = {
 
+  updater = {
+    channel = "nightly",
+    remote = "origin",
+    version = "latest",
+    branch = "main",
+    commit = nil,
+    pin_plugins = true,
+    skip_prompts = false,
+    show_changelog = true,
+    -- remotes = { -- easily add new remotes to track
+    --   ["remote_name"] = "https://remote_url.come/repo.git", -- full remote url
+    --   ["remote2"] = "github_user/repo", -- GitHub user/repo shortcut,
+    --   ["remote3"] = "github_user", -- GitHub user assumes user/AstroNvim.git
+    -- },
+  },
+
   -- Set colorscheme
   colorscheme = "nightfly",
 
   options = {
     opt = {
-      relativenumber = true, -- sets vim.opt.relativenumber
-      foldmethod = 'syntax',
+      relativenumber = false, -- sets vim.opt.relativenumber
+      foldmethod = "expr",
+      foldexpr = "nvim_treesitter#foldexpr()",
       foldlevel = 10,
     },
     g = {
@@ -53,6 +70,7 @@ local config = {
         end,
       },
       { "tpope/vim-fugitive" },
+      { "nvim-treesitter/nvim-treesitter-context" },
     },
     -- All other entries override the setup() call for default plugins
     ["null-ls"] = function(config)
@@ -63,7 +81,11 @@ local config = {
       config.sources = {
         -- Set a formatter
         null_ls.builtins.formatting.rufo,
-        null_ls.builtins.formatting.prettier, 
+        null_ls.builtins.formatting.prettierd,
+        null_ls.builtins.formatting.stylua,
+        null_ls.builtins.formatting.buf,
+        null_ls.builtins.formatting.buildifier,
+        null_ls.builtins.formatting.rustfmt,
         -- Set a linter
         null_ls.builtins.diagnostics.rubocop,
       }
@@ -101,8 +123,6 @@ local config = {
       javascript = { "javascriptreact" },
     },
   },
-
-
 
   -- Modify which-key registration
   ["which-key"] = {
@@ -152,6 +172,8 @@ local config = {
     -- Set key bindings
     vim.keymap.set("n", "<C-s>", ":w!<CR>")
 
+    vim.lsp.buf.formatting_sync(nil, 2000)
+
     -- Set autocommands
     vim.api.nvim_create_augroup("packer_conf", { clear = true })
     vim.api.nvim_create_autocmd("BufWritePost", {
@@ -159,7 +181,7 @@ local config = {
       group = "packer_conf",
       pattern = "plugins.lua",
       command = "source <afile> | PackerSync",
-    }) 
+    })
   end,
 }
 
